@@ -1,0 +1,20 @@
+useful env vars in deployment env:
+
+HOME=/
+PWD=/opt/wml-edi/work
+
+REDHARE_MODEL_CREATOR=wangw6
+REDHARE_MODEL_NAME=deepliif-wendy
+REDHARE_MODEL_PATH=/opt/wml-edi/repo/deepliif-wendy/deepliif-wendy-20220211-211426
+
+TASK_JOB_ID=edi-deepliif-wendy-7dffbd76d8-nvqvr
+HOSTNAME=edi-deepliif-wendy-7dffbd76d8-nvqvr-task12n-7dnmx
+MSD_POD_NAME=edi-deepliif-wendy-7dffbd76d8-nvqvr-task12n-7dnmx
+
+
+
+LD_LIBRARY_PATH=/opt/wml-edi/2.3.3/linux-x86_64/lib/:/opt/wml-edi/2.3.3/linux-ppc64le/lib/:/opt/wml-edi/repo/deepliif-wendy/deepliif-wendy-20220211-211426::/opt/wmla-mk/sdk/python:/opt/wml-edi/2.3.3/linux-x86_64/lib/:/opt/wml-edi/2.3.3/linux-ppc64le/lib/:/opt/wml-edi/repo/deepliif-wendy/deepliif-wendy-20220211-211426::/opt/wml-edi/2.3.3/linux-x86_64/lib::/opt/anaconda3/envs/dlipy3/lib/python3.8/site-packages/tensorflow'
+
+REDHARE_LD_LIBRARY_PATH=/opt/wmla-mk/sdk/python:/opt/wml-edi/2.3.3/linux-x86_64/lib/:/opt/wml-edi/2.3.3/linux-ppc64le/lib/:/opt/wml-edi/repo/deepliif-wendy/deepliif-wendy-20220211-211426:
+
+PATH=/opt/anaconda3/envs/dlipy3/bin:/opt/anaconda3/condabin:/opt/anaconda3/bin:/opt/wml-edi/2.3.3/linux-x86_64/etc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

@@ -1,0 +1,21 @@
+python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-tutorial/deployment-wmla/edi_deployment_files/deepliif-wendy --path-yml=/userfs/deployment_metadata_cli_example.yml
+
+python cli_mlops.py deploy create --name deepliif-wendy-test9 --model-asset-id 2084c56c-d55b-4ac5-92c8-ed001fd3ac2d --kernel-filename kernel-wendy.py --custom-arg CPD_USERNAME=wangw6 --custom-arg CPD_API_KEY=********** --custom-arg VOLUME_DISPLAY_NAME=AdditionalDeepLIIFVolume
+
+python cli_mlops.py monitor create --name deepliif-wendy-test9
+
+python cli_mlops.py monitor status --name deepliif-wendy-test9
+
+python cli_mlops.py deploy stop --name deepliif-wendy-test9
+
+python cli_mlops.py deploy delete --name deepliif-wendy-test9
+
+python cli_mlops.py deploy list
+
+python cli_mlops.py config list
+
+python cli_mlops.py config list --detail True
+
+python cli_mlops.py config delete --model-asset-id f6c8acb8-3490-4e9d-bb99-df00ee773f61
+
+python cli_mlops.py config delete --name deepliif-wendy-test
