@@ -2,6 +2,7 @@
 
 """
 Avoid using list() to convert a python object to a list because we re-defined list().
+If needed, usse list_builtin() instead.
 """
 
 import click
@@ -10,7 +11,6 @@ import sys
 import re
 import yaml
 import subprocess
-import pandas as pd # to format tables
 from ibm_watson_openscale.supporting_classes.enums import TargetTypes
 
 import wml_sdk_utils as wml_util
@@ -21,6 +21,9 @@ import wmla_utils as wmla_util
 import warnings
 warnings.filterwarnings('ignore')
 
+import pandas as pd # to format tables
+pd.options.display.width = 0
+
 USER_ACCESS_TOKEN = os.getenv('USER_ACCESS_TOKEN')
 SPACE_ID = os.getenv('SPACE_ID')
 BASE_URL = os.getenv('BASE_URL',os.getenv('RUNTIME_ENV_APSX_URL','https://cpd-cpd.apps.cpd.mskcc.org'))
@@ -28,11 +31,19 @@ WMLA_HOST = os.getenv('WMLA_HOST','https://wmla-console-cpd-wmla.apps.cpd.mskcc.
 REST_SERVER = WMLA_HOST + '/dlim/v1/'
 DLIM_PATH = os.getenv('DLIM_PATH')
 DATA_MART_ID = '00000000-0000-0000-0000-000000000000'
+SUBSCRIPTION_NAME = "{DEPLOYMENT_NAME} Monitor"
 
+VERSION = '0.6'
+
+list_builtin = list
 
 @click.group()
 def cli():
     pass
+
+@cli.command()
+def version():
+    click.echo(f"Current version: {color(VERSION)}")
 
 
 # -------- cli group: prepare --------
@@ -47,7 +58,8 @@ def prepare():
 @click.option('--path-yml',type=str,default='deployment_metadata.yml',help='path to the yml config file of same structure as the example config')
 @click.option('--path-model',type=str,default='model/',help='path to model(s), can point to a file or a folder')
 @click.option('--path-dependency',type=str,default='dependency/',help='path to dependency file(s); if you use WMLA for deployment, it needs to be a folder because you will have at least a kernel file and a readme.md to supply to WMLA')
-def stage(path_yml,path_model,path_dependency):
+@click.option('--force','-f',is_flag=True,help='force overwrite if assets with the same name are found')
+def stage(path_yml,path_model,path_dependency,force):
     """
     Stage model files, dependency files for deployment, and yml config file into the target WML space.
     """
@@ -55,6 +67,19 @@ def stage(path_yml,path_model,path_dependency):
     path_dependency = path_dependency[:-1] if path_dependency.endswith('/') else path_dependency
     
     wml_client = wml_util.get_client(space_id=SPACE_ID)
+    
+    # load deployment config
+    conf = yaml.safe_load(open(path_yml).read())
+    click.echo(f"Validating yml config {color(path_yml)}...")
+    flag_valid,d_res = wml_util.metadata_yml_validate(conf,with_key=False)
+    if flag_valid:
+        click.echo(color('Pass','pass'))
+    else:
+        click.echo(f"{color('Error','error')}: structure in yml config {color(path_yml,'error')} is not valid")
+        for k,v in d_res.items():
+            if not v['flag_valid']:
+                click.echo('\n'.join(v['msg']))
+        sys.exit(1)
     
     # get final model/dependency name
     model_asset_name = os.path.basename(path_model)
@@ -70,20 +95,20 @@ def stage(path_yml,path_model,path_dependency):
     data_assets = wml_util.list_files(wml_client)
     
     if model_asset_name in data_assets.values() or dependency_asset_name in data_assets.values():
-        value = click.prompt('Asset with same name found in the WML space. Do you want to overwrite? Type "y" to overwrite,"n" to create a new asset with the same name, empty to abort',default='',type=str)
-        if value == 'y':
+        if force:
             wml_util.upload_batch([path_model,path_dependency],wml_client,overwrite=True)
-        elif value == 'n':
-            wml_util.upload_batch([path_model,path_dependency],wml_client,overwrite=False)
-        elif value == '':
-            click.echo(color('Aborted','error'))
-            return
         else:
-            click.echo(f'input value {value} is not accepted')
-            return
-
-    # load deployment config
-    conf = yaml.safe_load(open(path_yml).read())
+            value = click.prompt('Asset with same name found in the WML space. Do you want to overwrite? Type "y" to overwrite,"n" to create a new asset with the same name, empty to abort',default='',type=str)
+            if value == 'y':
+                wml_util.upload_batch([path_model,path_dependency],wml_client,overwrite=True)
+            elif value == 'n':
+                wml_util.upload_batch([path_model,path_dependency],wml_client,overwrite=False)
+            elif value == '':
+                click.echo(color('Aborted','error'))
+                sys.exit(1)
+            else:
+                click.echo(f'input value {value} is not accepted')
+                sys.exit(1)
     
     # get model asset id
     data_assets = wml_util.list_files(wml_client,keep_only_latest=True)
@@ -93,9 +118,8 @@ def stage(path_yml,path_model,path_dependency):
     conf['deployment_space_id'] = SPACE_ID
     conf['model_asset'] = model_asset_name
     conf['wmla_deployment']['dependency_filename'] = dependency_asset_name
-    conf = {model_asset_id:conf}
     
-    wml_util.metadata_yml_add(conf,wml_client,overwrite=True)
+    wml_util.metadata_yml_add({model_asset_id:conf},wml_client,overwrite=True)
     
     conf_loaded = wml_util.metadata_yml_load(wml_client)[model_asset_id]
     click.echo(f"Model asset id: {color(model_asset_id,'pass')}")
@@ -139,14 +163,14 @@ def delete(name,model_asset_id):
     """
     if name == '' and model_asset_id == '':
         click.echo(f"{color('Error','error')}: Specify either --name or --model-asset-id.")
-        return
+        sys.exit(1)
     
     wml_client = wml_util.get_client(space_id=SPACE_ID)
     confs = wml_util.metadata_yml_load(wml_client)
     if model_asset_id != '':
         if model_asset_id not in confs.keys():
             click.echo(f"{color('Error','error')}: model asset id {color(model_asset_id,'error')} cannot be found in the config yml.")
-            return
+            sys.exit(1)
         keys_to_delete = [model_asset_id]
     else:
         keys_to_delete = [model_asset_id for model_asset_id,conf in confs.items() if conf['wmla_deployment']['deployment_name']==name]
@@ -154,6 +178,32 @@ def delete(name,model_asset_id):
     click.echo(f"{color(len(keys_to_delete))} entries to delete.")
     if len(keys_to_delete) > 0:
         wml_util.metadata_yml_delete_key(keys_to_delete,wml_client)
+
+@config.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
+@click.option('--path-yml',type=str,required=True,help='path to a deployment metadata yml config with one COMPLETE entry')
+@click.option('--force','-f',is_flag=True,help='force overwrite if entry with same key exists')
+def add(path_yml,force):
+    """
+    Add one or more entries into the deployment metadata yml in wml space. 
+    Use this when you don't stage the model and files via the "prepare stage" command.
+    Unlike the yml config pass to the "prepare stage" command, here it MUST have model asset id as the key.
+    """
+    metadata = yaml.safe_load(open(path_yml).read())
+    
+    flag_valid,d_res = wml_util.metadata_yml_validate(metadata,with_key=True)
+    if flag_valid:
+        click.echo(f"{color('Pass','pass')}")
+        
+        wml_client = wml_util.get_client(space_id=SPACE_ID)
+        wml_util.metadata_yml_add(metadata,wml_client,overwrite = force)
+    else:
+        click.echo(f"{color('Error','error')}: not all entries are valid")
+        for k,v in d_res.items():
+            if not v['flag_valid']:
+                if with_key:
+                    click.echo(f"**** model asset id {color(k,'error')} ****")
+                click.echo('\n'.join(v['msg']))
+        sys.exit(1)
            
 # -------- cli group: deploy --------
 @cli.group()
@@ -181,12 +231,12 @@ def create(name, model_asset_id, kernel_filename, custom_arg,
         pair_parsed = pair.split('=')
         if len(pair_parsed) != 2:
             click.echo(f"{color('Error','error')}: Key-value pair {color(pair,'error')} in custom-arg does not have exactly 1 equal sign")
-            return
+            sys.exit(1)
         k = pair_parsed[0]
         v = pair_parsed[1]
         if len(k) == 0 or v == 0:
             click.echo(f"{color('Error','error')}: Key-value pair {color(pair,'error')} in custom-arg has an invalid key or value")
-            return
+            sys.exit(1)
     
     if len(custom_arg) > 0:
         os.environ['CUSTOM_ARG'] = ' '.join(custom_arg)
@@ -219,17 +269,17 @@ def create(name, model_asset_id, kernel_filename, custom_arg,
     confs = wml_util.metadata_yml_load(wml_client)
     if model_asset_id not in confs.keys():
         click.echo(f"{color('Error','error')}: model asset id {color(model_asset_id,'error')} cannot be found in config file")
-        return
+        sys.exit(1)
 
     model_asset_ids_matched = [k for k,conf in confs.items() if conf['wmla_deployment']['deployment_name']==name]
     if len(model_asset_ids_matched) > 0:
         click.echo(f"{color('Error','error')}: deployment name {color(name,'error')} is already found in config file, associated with model asset id {color(model_asset_ids_matched[0],'error')}. Stop and delete the existing deployment before creating one with the same name.")
-        return
+        sys.exit(1)
     
     conf = confs[model_asset_id]
     if conf['wmla_deployment']['deployment_name'] is not None:
         click.echo(f"{color('Error','error')}: model asset id {color(model_asset_id,'error')} is already deployed with deployment name {color(name,'error')}. Stop and delete the existing deployment before creating one with the same model asset id.")
-        return
+        sys.exit(1)
     
     # update yml
     conf['wmla_deployment']['deployment_name'] = name
@@ -257,8 +307,34 @@ def stop(name):
 
 @deploy.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
 @click.option('--name',required=True,type=str,help='deployment name, only lowercase letters/hyphens/numbers are allowed')
-def delete(name):
-    subprocess.run(f"dlim model undeploy {name} --rest-server {REST_SERVER} --jwt-token {USER_ACCESS_TOKEN} -f",shell=True)
+@click.option('--remove-monitor',is_flag=True,help='a flag to remove the associated monitors in openscale')
+@click.option('--remove-config',is_flag=True,help='a flag to remove the associated entry in the config yml')
+def delete(name,remove_monitor,remove_config):
+    res = subprocess.run(f"dlim model undeploy {name} --rest-server {REST_SERVER} --jwt-token {USER_ACCESS_TOKEN} -f",shell=True)
+    if res.returncode == 0:
+        click.echo(f"Modifying config yml to refect this change..")
+        wml_client = wml_util.get_client(space_id=SPACE_ID)
+        
+        if remove_monitor:
+            click.echo('')
+            click.echo(f"Removing the associated subscription in openscale..")
+            wos_client = wos_util.get_client()
+            wos_util.subscription_delete(wos_client,subscription_name=SUBSCRIPTION_NAME.format(DEPLOYMENT_NAME=name))
+        
+        if remove_config:
+            click.echo('')
+            click.echo(f"Removing the associated entry in config yml..")
+            model_asset_id, conf = get_metadata_by_deployment_name(name,wml_client)
+            wml_util.metadata_yml_delete_key(model_asset_id,wml_client)
+        else:
+            click.echo('')
+            click.echo(f"Removing deployment name from the associated entry in config yml...")
+            model_asset_id, conf = get_metadata_by_deployment_name(name,wml_client)
+            conf['wmla_deployment']['deployment_name'] = None
+            if remove_monitor:
+                conf['openscale_subscription_id'] = None
+            wml_util.metadata_yml_add({model_asset_id:conf},wml_client,overwrite=True)
+            
 
 @deploy.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
 def list():
@@ -285,7 +361,7 @@ def create(name,service_provider_name,save_notebook):
     model_asset_id, conf = get_metadata_by_deployment_name(name,wml_client)
     if conf is None:
         click.echo(f"{color('Error','error')}: no config found for deployment name {color(name,'error')}")
-        return
+        sys.exit(1)
     
     if conf['openscale_subscription_id'] is not None:
         click.echo(f"{color('Error','error')}: deployment {color(name,'error')} is already configured in OpenScale with subscription id {color(conf['openscale_subscription_id'],'error')}. If you want to re-configure the monitor, at the moment you need to delete the existing subscription.")
@@ -304,7 +380,38 @@ def create(name,service_provider_name,save_notebook):
     click.echo(f'Starting notebook A3_OpenScale_Configuration.ipynb to configure OpenScale monitors for deployment {color(name)} (model asset id {color(model_asset_id)})...')
     ws_util.run_pipeline_notebook(path_nb,save_notebook=save_notebook)
 
+@monitor.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
+@click.option('--name',required=True,type=str,help='deployment name')
+def delete(name):
+    """
+    Delete the monitors associated with a deployment. It essentially deletes the openscale subscription.
+    """
+    wos_client = wos_util.get_client()
+    wos_util.subscription_delete(wos_client,subscription_name=SUBSCRIPTION_NAME.format(DEPLOYMENT_NAME=name))
 
+@monitor.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
+def list():
+    """
+    List monitors configured for deployments.
+    """
+    wos_client = wos_util.get_client()
+    subscriptions = wos_client.subscriptions.list().result.to_dict()['subscriptions']
+    click.echo(f"{color(len(subscriptions))} subscriptions found")
+    click.echo('')
+    if len(subscriptions) > 0:
+        df_subscriptions = pd.json_normalize(subscriptions)[['entity.asset.name',
+                                                              'metadata.created_at','metadata.created_by','metadata.id']]
+        df_subscriptions.columns = ['subscription_name','created_at','created_by','subscription_id']
+        df_subscriptions['created_at'] = df_subscriptions['created_at'].apply(lambda x: x.split('.')[0]) 
+        df_subscriptions = df_subscriptions.sort_values('created_at',ascending=False).set_index('subscription_id')
+        
+        monitor_instances = wos_client.monitor_instances.list().result.to_dict()['monitor_instances']
+        df_monitor_instances = pd.json_normalize(monitor_instances)[['entity.target.target_id','entity.monitor_definition_id']]
+        df_monitor_instances.columns = ['subscription_id','monitor']
+        df_monitor_instances = df_monitor_instances.groupby('subscription_id').agg(list_builtin)
+        df_monitor_instances['monitor'] = df_monitor_instances['monitor'].apply(lambda x: ', '.join(x))
+        
+        print(df_subscriptions.join(df_monitor_instances,how='left'))
 
 @monitor.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
 @click.option('--name',required=True,type=str,help='deployment name')
@@ -318,11 +425,11 @@ def status(name):
     model_asset_id, conf = get_metadata_by_deployment_name(name,wml_client)
     if conf is None:
         click.echo(f"{color('Error','error')}: no config found for deployment name {color(name,'error')}")
-        return
+        sys.exit(1)
     
     if conf['openscale_subscription_id'] is None:
         click.echo(f"{color('Error','error')}: Config for deployment {color(name,'error')} does not have a subsription id. Have you configured the monitors?")
-        return
+        sys.exit(1)
     
     click.echo(f'Fetching latest monitor status for deployment {color(name)} (model asset id {color(model_asset_id)})...')
     subscription_id = conf['openscale_subscription_id']

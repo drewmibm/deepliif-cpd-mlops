@@ -1,0 +1,118 @@
+54b19403-9c10-48e5-b3f3-dc958e2cfbb1:
+    deployment_id: null
+    deployment_space_id: null
+    model_asset: null
+    model_name: null
+    openscale_custom_metric_provider:
+        generic_metrics:
+          dir_gt: DeepLIIF_Datasets/model_eval/gt_images
+          dir_pred: DeepLIIF_Datasets/model_eval/model_images
+          most_recent: 1
+          thresholds:
+            num_images_recent_ground_truth:
+              threshold:
+              - 10.0
+              - lower
+            num_images_recent_predicted:
+              threshold:
+              - 40.0
+              - lower
+            num_images_total_ground_truth:
+              threshold:
+              - 5.0
+              - lower
+            num_images_total_predicted:
+              threshold:
+              - 40.0
+              - lower
+          volume_display_name: AdditionalDeepLIIFVolume
+        segmentation_metrics:
+          dir_gt: DeepLIIF_Datasets/model_eval/gt_images
+          dir_pred: DeepLIIF_Datasets/model_eval/model_images
+          most_recent: 5
+          thresholds:
+            Dice:
+              threshold:
+              - 20.0
+              - lower
+            Dice_negative:
+              threshold:
+              - 0.2
+              - lower
+            Dice_positive:
+              threshold:
+              - 0.2
+              - lower
+            IOU:
+              threshold:
+              - 12.0
+              - lower
+            IOU_negative:
+              threshold:
+              - 0.12
+              - lower
+            IOU_positive:
+              threshold:
+              - 0.12
+              - lower
+            PixAcc:
+              threshold:
+              - 35.0
+              - lower
+            PixAcc_negative:
+              threshold:
+              - 0.35
+              - lower
+            PixAcc_positive:
+              threshold:
+              - 0.35
+              - lower
+            f1:
+              threshold:
+              - 45.0
+              - lower
+            f1_negative:
+              threshold:
+              - 0.45
+              - lower
+            f1_positive:
+              threshold:
+              - 0.45
+              - lower
+            precision:
+              threshold:
+              - 60.0
+              - lower
+            precision_negative:
+              threshold:
+              - 0.6
+              - lower
+            precision_positive:
+              threshold:
+              - 0.6
+              - lower
+            recall:
+              threshold:
+              - 15.0
+              - lower
+            recall_negative:
+              threshold:
+              - 0.15
+              - lower
+            recall_positive:
+              threshold:
+              - 0.15
+              - lower
+          volume_display_name: AdditionalDeepLIIFVolume
+    openscale_subscription_id: null
+    wmla_deployment:
+        dependency_filename: null
+        deployment_name: null
+        deployment_url: null
+        resource_configs:
+          enable_gpus: 'True'
+          memory_allocation: 10000
+          n_cpus: 8
+          n_min_kernels: 1
+          n_replicas: 1
+          task_execution_timeout: 120
