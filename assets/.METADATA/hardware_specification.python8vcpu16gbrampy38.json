@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "name": "python 8vcpu 16gb ram py3.8",
+    "description": "",
+    "origin_country": "US",
+    "tags": [
+      "dsx"
+    ],
+    "asset_type": "hardware_specification",
+    "rov": {
+      "mode": 0
+    },
+    "asset_category": "USER",
+    "created_at": "2022-02-09T14:46:32Z",
+    "created": 1644417992973,
+    "asset_id": "hardware_specification.python8vcpu16gbrampy38",
+    "asset_attributes": [
+      "hardware_specification"
+    ]
+  },
+  "entity": {
+    "hardware_specification": {
+      "nodes": {
+        "cpu": {
+          "units": "8",
+          "model": ""
+        },
+        "mem": {
+          "size": "16Gi"
+        }
+      }
+    }
+  },
+  "attachments": []
+}

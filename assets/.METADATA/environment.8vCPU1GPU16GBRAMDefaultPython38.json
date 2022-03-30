@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "name": "8vCPU 1GPU 16 GB RAM Default Python 3.8",
+    "description": "",
+    "origin_country": "US",
+    "tags": [
+      "dsx"
+    ],
+    "asset_type": "environment",
+    "rov": {
+      "mode": 0
+    },
+    "asset_category": "USER",
+    "created_at": "2022-02-09T01:09:16Z",
+    "created": 1644368956377,
+    "asset_id": "environment.8vCPU1GPU16GBRAMDefaultPython38",
+    "asset_attributes": [
+      "environment"
+    ]
+  },
+  "entity": {
+    "environment": {
+      "sub_type": "notebook",
+      "display_name": "8vCPU 1GPU 16 GB RAM Default Python 3.8",
+      "hardware_specification": {
+        "type": "referenced",
+        "guid": "hardware_specification.8vCPU1GPU16GBRAMDefaultPython38"
+      },
+      "software_specification": {
+        "type": "referenced",
+        "guid": "software_specification.8vCPU1GPU16GBRAMDefaultPython38"
+      },
+      "tools_specification": {
+        "supported_kernels": [
+          {
+            "name": "python3",
+            "language": "python",
+            "version": "3.8",
+            "display_name": "Python 3.8"
+          }
+        ]
+      },
+      "runtime_definition": "jupyter-py38gpu"
+    }
+  },
+  "attachments": []
+}
