@@ -74,31 +74,35 @@ def list_files(wml_client,keep_only_latest=False,include_details=False,ext=None)
     ext: a string of extensions only with which the asset will be included; default
          to None which does not filter
     """
-    df_assets = pd.json_normalize(wml_client.data_assets.get_details()['resources'])
-    df_assets['metadata.usage.last_update_time'] = df_assets['metadata.usage.last_update_time'].apply(lambda x: pd.Timestamp(x,unit='ms'))
-    
-    colnames_minimum = ['metadata.name', 'metadata.asset_id', 'metadata.usage.last_update_time']
-    colnames_detailed = ['metadata.name', 'metadata.asset_id', 'metadata.usage.last_update_time', 
-                     'metadata.created_at', 'metadata.last_updated_at', 'metadata.usage.last_updater_id']
-    
-    if include_details:
-        df_assets = df_assets[colnames_detailed]
+    data_assets = wml_client.data_assets.get_details()['resources']
+    if len(data_assets) > 0:
+        df_assets = pd.json_normalize(data_assets)
+        df_assets['metadata.usage.last_update_time'] = df_assets['metadata.usage.last_update_time'].apply(lambda x: pd.Timestamp(x,unit='ms'))
+
+        colnames_minimum = ['metadata.name', 'metadata.asset_id', 'metadata.usage.last_update_time']
+        colnames_detailed = ['metadata.name', 'metadata.asset_id', 'metadata.usage.last_update_time', 
+                         'metadata.created_at', 'metadata.last_updated_at', 'metadata.usage.last_updater_id']
+
+        if include_details:
+            df_assets = df_assets[colnames_detailed]
+        else:
+            df_assets = df_assets[colnames_minimum]
+
+        if keep_only_latest:
+            df_assets = df_assets.sort_values('metadata.usage.last_update_time',ascending=False).drop_duplicates('metadata.name')
+
+        df_assets = df_assets.drop(['metadata.usage.last_update_time'],axis=1)
+        df_assets.columns = [c.replace('metadata.usage.','').replace('metadata.','') for c in df_assets.columns]
+
+        if ext is not None:
+            df_assets = df_assets[df_assets['name'].str.endswith(ext)]
+
+        if include_details:
+            return df_assets.set_index('asset_id').to_dict(orient='index')
+        else:
+            return df_assets.set_index('asset_id').to_dict()['name']
     else:
-        df_assets = df_assets[colnames_minimum]
-        
-    if keep_only_latest:
-        df_assets = df_assets.sort_values('metadata.usage.last_update_time',ascending=False).drop_duplicates('metadata.name')
-    
-    df_assets = df_assets.drop(['metadata.usage.last_update_time'],axis=1)
-    df_assets.columns = [c.replace('metadata.usage.','').replace('metadata.','') for c in df_assets.columns]
-    
-    if ext is not None:
-        df_assets = df_assets[df_assets['name'].str.endswith(ext)]
-    
-    if include_details:
-        return df_assets.set_index('asset_id').to_dict(orient='index')
-    else:
-        return df_assets.set_index('asset_id').to_dict()['name']
+        return {}
 
 
 def upload(path,wml_client,fn_target=None,overwrite=False):
@@ -564,4 +568,3 @@ def get_top_level(d,keys_ignore=[]):
                     elif k == 'wmla_deployment':
                         d_res[k1]['deployment_name'] = v['deployment_name']
     return d_res
-
