@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "name": "jupyterlab 2vcpu 16gb ram py3.8",
+    "description": "",
+    "origin_country": "US",
+    "tags": [
+      "dsx"
+    ],
+    "asset_type": "hardware_specification",
+    "rov": {
+      "mode": 0
+    },
+    "asset_category": "USER",
+    "created_at": "2022-03-31T23:58:27Z",
+    "created": 1648771107405,
+    "asset_id": "hardware_specification.jupyterlab2vcpu16gbrampy38",
+    "asset_attributes": [
+      "hardware_specification"
+    ]
+  },
+  "entity": {
+    "hardware_specification": {
+      "nodes": {
+        "cpu": {
+          "units": "2",
+          "model": ""
+        },
+        "mem": {
+          "size": "16Gi"
+        }
+      }
+    }
+  },
+  "attachments": []
+}

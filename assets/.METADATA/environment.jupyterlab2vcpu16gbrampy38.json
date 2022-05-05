@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "name": "jupyterlab 2vcpu 16gb ram py3.8",
+    "description": "",
+    "origin_country": "US",
+    "tags": [
+      "dsx"
+    ],
+    "asset_type": "environment",
+    "rov": {
+      "mode": 0
+    },
+    "asset_category": "USER",
+    "created_at": "2022-03-31T23:58:27Z",
+    "created": 1648771107470,
+    "asset_id": "environment.jupyterlab2vcpu16gbrampy38",
+    "asset_attributes": [
+      "environment"
+    ]
+  },
+  "entity": {
+    "environment": {
+      "sub_type": "jupyterlab",
+      "display_name": "jupyterlab 2vcpu 16gb ram py3.8",
+      "hardware_specification": {
+        "type": "referenced",
+        "guid": "hardware_specification.jupyterlab2vcpu16gbrampy38"
+      },
+      "software_specification": {
+        "type": "referenced",
+        "guid": "software_specification.jupyterlab2vcpu16gbrampy38"
+      },
+      "tools_specification": {
+        "supported_kernels": [
+          {
+            "name": "python38",
+            "language": "python",
+            "version": "3.8",
+            "display_name": "Python 3.8"
+          }
+        ]
+      },
+      "runtime_definition": "jupyter-lab-py38-applications"
+    }
+  },
+  "attachments": []
+}
