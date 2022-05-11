@@ -59,17 +59,19 @@ def get_metrics(subscription_id):
     
     metadata = metadata[0]
     env_name = os.getenv('HOSTNAME','')
-    dir_user = '/userfs' if 'jupyter-lab' in env_name else '/home/wmlfuser' # the working directory is /opt/ibm/scoring/python/py_scoring_base
+    
+    flag_local_test = 'jupyter-lab' in env_name
+    dir_user = '/userfs' if flag_local_test else '/home/wmlfuser' # the working directory is /opt/ibm/scoring/python/py_scoring_base
     print(dir_user)
     
 
     path_script = 'DeepLIIF_Statistics/ComputeStatistics.py'
-    dir_gt = metadata['openscale_custom_metric_provider']['segmentation_metrics']['dir_gt']#'DeepLIIF_Datasets/model_eval/gt_images'
-    dir_pred = metadata['openscale_custom_metric_provider']['segmentation_metrics']['dir_pred']#'DeepLIIF_Datasets/model_eval/model_images'
-    most_recent = metadata['openscale_custom_metric_provider']['segmentation_metrics']['most_recent']#5
+    dir_gt = 'DeepLIIF_Datasets/model_eval/gt_images' if flag_local_test else metadata['openscale_custom_metric_provider']['segmentation_metrics']['dir_gt']
+    dir_pred = 'DeepLIIF_Datasets/model_eval/model_images' if flag_local_test else metadata['openscale_custom_metric_provider']['segmentation_metrics']['dir_pred']
+    most_recent = 5 if flag_local_test else metadata['openscale_custom_metric_provider']['segmentation_metrics']['most_recent']
     num_files_least = 3
     
-    os.environ['VOLUME_DISPLAY_NAME'] = metadata['openscale_custom_metric_provider']['segmentation_metrics']['volume_display_name']
+    os.environ['VOLUME_DISPLAY_NAME'] = 'AdditionalDeepLIIFVolume' if flag_local_test else metadata['openscale_custom_metric_provider']['segmentation_metrics']['volume_display_name']
 
     # download images
     files_gt = sv.list_files(dir_gt,most_recent=most_recent)
@@ -145,7 +147,7 @@ def score( input_data ):
     os.environ['USER_ACCESS_TOKEN'] = access_token
     
     published_measurements = []
-    error_msg = None
+    error_msg = []
 
     custom_monitoring_run_id = custom_monitor_instance_params["run_details"]["run_id"]
         
@@ -159,15 +161,15 @@ def score( input_data ):
         else:
             custom_monitor_instance_params["run_details"]["run_status"] = "error"
             custom_monitor_instance_params["run_details"]["run_error_msg"] = published_measurement
-            error_msg = published_measurement
+            error_msg.append(published_measurement)
 
         custom_monitor_instance_params["last_run_time"] = timestamp
         status_code, response = update_monitor_instance(base_url, access_token, custom_monitor_instance_id, custom_monitor_instance_params)
         if not int(status_code) in [200, 201, 202]:
-            error_msg = response
+            error_msg.append(response.text)
 
     except Exception as ex:
-        error_msg = str(ex)
+        error_msg.append(str(ex))
     if error_msg is None:
         response_payload = {
             "predictions" : [{ 
@@ -177,6 +179,7 @@ def score( input_data ):
         }
     else:
         response_payload = {
+            "predictions": [],
             "error_msg": error_msg
         }
 
