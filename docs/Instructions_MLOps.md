@@ -57,7 +57,7 @@ You can create a copy of the example and make modifications.
   1. deployment configuration, such as how much memory is needed, etc.
   2. monitor configuration, such as the threshold for each metric under each monitor
     - you need to delete the unwanted monitor from the example and add your preferred one(s) if they are not already there
-    - refer to [section 3.3]() to see how to get all metrics and their default thresholds
+    - refer to [section 3.3](https://github.com/drewmibm/deepliif-cpd-mlops/blob/main/docs/Instructions_MLOps.md#33-thresholds_-metric-thresholds-for-openscale-monitor) to see how to get all metrics and their default thresholds
     
 
 ## 2. Procedures
