@@ -47,7 +47,7 @@ THRESHOLDS_SEGMENTATION = {'precision': {'threshold': [60.0, 'lower']},
  'PixAcc_negative': {'threshold': [0.35, 'lower']}}
 ```
 
-You can fill in the information you gathered in the User Configuration section, and then follow the notebook [A_MLOps_Pipeline]() to generate a deployment metadata yaml file. Alternative, you may refer to the example yaml [deployment_metadata_cli_example.yml]() and ask researchers / data scientists to provide you with a deployment metadata yaml of the same structure.
+You can fill in the information you gathered in the User Configuration section, and then follow the notebook [A_MLOps_Pipeline](../A_MLOps_Pipeline.ipynb) to generate a deployment metadata yaml file. Alternative, you may refer to the example yaml [deployment_metadata_cli_example.yml](../deployment_metadata_cli_example.yml) and ask researchers / data scientists to provide you with a deployment metadata yaml of the same structure.
 
 #### How to make my yaml based on the example?
 You can create a copy of the example and make modifications.
@@ -59,16 +59,17 @@ You can create a copy of the example and make modifications.
     - you need to delete the unwanted monitor from the example and add your preferred one(s) if they are not already there
     - refer to [section 3.3]() to see how to get all metrics and their default thresholds
     
-*At the moment there is no method implemented to validate whether a yaml is legit.*
 
 ## 2. Procedures
-You can either use the cli tool [cli_mlops.py](), or follow the notebook for more interactive experience [A_MLOps_Pipeline]().
+You can either use the cli tool [cli_mlops.py](../cli_mlops_py), or follow the notebook for more interactive experience [A_MLOps_Pipeline](../A_MLOps_Pipeline.ipynb). It's recommended to use the cli as it provides more functionalities.
 
 Note:  
 space: Watson Machine Learning deployment space
 
 ### 2.1 CLI
-The cli is more or less a wrapper of notebook [A_MLOps_Pipeline](). 
+The cli is more or less a wrapper of notebook [A_MLOps_Pipeline](../A_MLOps_Pipeline.ipynb) with more functionalities. 
+
+A list of example commands can be found in [cheat_sheet_cli_mlops.txt](cheat_sheet_cli_mlops.txt)
 
 #### 1. Prepare the environment
 Make sure you have CPD access token and WML space id as environment variable. Check using the following command:
@@ -82,52 +83,63 @@ Configure if not specified:
 export SPACE_ID=<wml space id to stage files to>
 ```
 
+In addition, your `dlim` tool (WMLA's CLI for EDI inference service) needs to be in a place registered to `$PATH`. For example, if the `dlim` file is in folder `/userfs`, register this folder to `$PATH` by running:
+```
+export PATH=$PATH:/userfs
+```
+
 #### How to get CPD access token?
 To get a token, refer to https://cloud.ibm.com/apidocs/cloud-pak-data#getauthorizationtoken or use the `get_access_token()` method in `cpd_utils.py`.
+
+#### How to get `dlim`?
+You can download it from [WMLA web console](https://wmla-console-cpd-wmla.apps.cpd.mskcc.org/ui/#/cliTools). Note that as of CPD 4.0.5, **it automatically selects the architecture that matches the system where you browser sits**. If you use a windows machine to open this page, the downloaded `dlim` will be for windows and cannot be used in a linux environment.
 
 #### 2. Stage the model and dependency files, along with the config
 You will see model asset id printed out that you may need for steps afterwards..
 ```
-python cli_mlops.py stage --path-model <path to model file(s)> --path-dependency <path to dependency file(s)> --path-yml <path to config yml>
+python cli_mlops.py prepare stage --path-model <path to model file(s)> --path-dependency <path to dependency file(s)> --path-yml <path to config yml>
 ```
 
 For example:
 ```
-python cli_mlops.py stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-tutorial/deployment-wmla/edi_deployment_files/deepliif-base
+python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-deployment/edi-deployment-dirs/deepliif-base --path-yml=/userfs/deployment_metadata_cli_example.yml
 ```
-This example assumes that in the working directory there is a file called `deployment_metadata.yml`.
+
 
 #### 3. Deploy the model
-Similar to how this notebook works, the `deploy` method at the backend executes pipeline notebook [A2_...]().
+Similar to how this notebook works, the `deploy create` method at the backend executes pipeline notebook [A2](../A2_WMLA_Model_Deploy.ipynb).
 ```
-python cli_mlops.py deploy --name <deployment name> --model-asset-id <model asset id>
+python cli_mlops.py deploy create --name <deployment name> --model-asset-id <model asset id>
 ```
+Additional optional parameters:
+- `kernel-filename`: filename of the kernel script, default to `kernel.py`
+- `custom-arg`: key-value pairs to be inserted into the kernel script on the fly, good to store changeable variables or credentials (so the kernel script in git repository doesn't contain sensitive information)
+- `save-notebook`: whether to save the executed notebook
 
 For example:
 ```
-python cli_mlops.py deploy --name deepliif-wendy --model-asset-id 8684d654-c253-4d24-a6f3-499bdc9bc55a
+python cli_mlops.py deploy create --name my-model --model-asset-id 41a9a8ff-dcaa-4f0f-beb5-2e1bbaa2f384 --kernel-filename kernel.py --custom-arg CPD_USERNAME=***** --custom-arg CPD_API_KEY=********** --custom-arg VOLUME_DISPLAY_NAME=AdditionalDeepLIIFVolume
 ```
 
 #### 4. Configure monitors for the model
-Similar to how this notebook works, the `deploy` method at the backend executes pipeline notebook [A3_OpenScale_Configuration]().
+Similar to how this notebook works, the `monitor create` method at the backend executes pipeline notebook [A3_OpenScale_Configuration](../A3_OpenScale_Configuration.ipynb).
 ```
-python cli_mlops.py monitor --name <deployment name> --model-asset-id <model asset id> --service-provider-name <openscale deployment service provider name> --save-notebook <True to save the executed pipeline notebook out>
+python cli_mlops.py monitor create --name <deployment name> --service-provider-name <openscale deployment service provider name> --save-notebook <True to save the executed pipeline notebook out>
 ```
+Additional optional parameters:
+- `service_provider_name`: OpenScale service provider name to register the deployment from, default to a headless service provider named `OpenScale Headless Service Provider`
+- `save-notebook`: whether to save the executed notebook
 
 For example:
 ```
-python cli_mlops.py monitor --name deepliif-wendy
+python cli_mlops.py monitor create --name deepliif-wendy
 ```
 
-This example assumes that 
-- the config of interest is the last one **added** to the big `deployment_metadata.yml` in the target WML space which contains the configuration for multiple models
-- the service provider name uses the default value `OpenScale Headless Service Provider`
-- no need to save the executed pipeline notebook
 
 #### How to get the latest monitor status for a deployment?
 This method retrieves back the information of the latest evaluation for each of the monitors configured with your deployment.
 ```
-python cli_mlops.py monitor-status --name <deployment name> --model-asset-id <model asset id>
+python cli_mlops.py monitor status --name <deployment name>
 ```
 
 For example:
@@ -135,7 +147,6 @@ For example:
 python cli_mlops.py monitor-status --name deepliif-wendy
 ```
 
-This example assumes that the config of interest is the last one **added** to the big `deployment_metadata.yml` in the target WML space which contains the configuration for multiple models.
 
 ### 2.2 MLOps Notebook
 
@@ -199,7 +210,7 @@ wos_client = wos_util.get_client()
 wos_client.service_providers.show()
 ```
 
-If you need to create a new headless deployment provider, follow notebook [C1_OpenScale_Dummy_ML_Provider.ipynb]()
+If you need to create a new headless deployment provider, follow notebook [C1_OpenScale_Dummy_ML_Provider.ipynb](../C1_OpenScale_Dummy_ML_Provider.ipynb)
 
 ### 3.3 `THRESHOLDS_<>`: Metric Thresholds for OpenScale Monitor
 Get default monitor thresholds:
