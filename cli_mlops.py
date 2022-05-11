@@ -109,6 +109,8 @@ def stage(path_yml,path_model,path_dependency,force):
             else:
                 click.echo(f'input value {value} is not accepted')
                 sys.exit(1)
+    else:
+        wml_util.upload_batch([path_model,path_dependency],wml_client,overwrite=False)
     
     # get model asset id
     data_assets = wml_util.list_files(wml_client,keep_only_latest=True)
@@ -278,7 +280,7 @@ def create(name, model_asset_id, kernel_filename, custom_arg,
     
     conf = confs[model_asset_id]
     if conf['wmla_deployment']['deployment_name'] is not None:
-        click.echo(f"{color('Error','error')}: model asset id {color(model_asset_id,'error')} is already deployed with deployment name {color(name,'error')}. Stop and delete the existing deployment before creating one with the same model asset id.")
+        click.echo(f"{color('Error','error')}: model asset id {color(model_asset_id,'error')} is already deployed with deployment name {color(conf['wmla_deployment']['deployment_name'],'error')}. Stop and delete the existing deployment before creating one with the same model asset id.")
         sys.exit(1)
     
     # update yml
@@ -330,10 +332,13 @@ def delete(name,remove_monitor,remove_config):
             click.echo('')
             click.echo(f"Removing deployment name from the associated entry in config yml...")
             model_asset_id, conf = get_metadata_by_deployment_name(name,wml_client)
-            conf['wmla_deployment']['deployment_name'] = None
-            if remove_monitor:
-                conf['openscale_subscription_id'] = None
-            wml_util.metadata_yml_add({model_asset_id:conf},wml_client,overwrite=True)
+            if conf is None:
+                click.echo(f"No config linked to deployment name {name}. The config might have been deleted already, or the deployment was not created using this cli flow.")
+            else:
+                conf['wmla_deployment']['deployment_name'] = None
+                if remove_monitor:
+                    conf['openscale_subscription_id'] = None
+                wml_util.metadata_yml_add({model_asset_id:conf},wml_client,overwrite=True)
             
 
 @deploy.command(context_settings=dict(ignore_unknown_options=True,allow_extra_args=True))
@@ -501,11 +506,11 @@ def color(x,condition='normal'):
 
 if __name__ == '__main__':
     if USER_ACCESS_TOKEN is None:
-        click.echo("Configure user access token by exporting it as an environment variable USER_ACCESS_TOKEN. In terminal, you can do \"export USER_ACCESS_TOKEN=<token>\"; in python, you can do \"os.environ['USER_ACCESS_TOKEN']=<token>\". To get a token, refer to https://cloud.ibm.com/apidocs/cloud-pak-data#getauthorizationtoken or use the \"get_access_token()\" method in cpd_utils.py.")
+        click.echo("\nConfigure user access token by exporting it as an environment variable USER_ACCESS_TOKEN. In terminal, you can do \"export USER_ACCESS_TOKEN=<token>\"; in python, you can do \"os.environ['USER_ACCESS_TOKEN']=<token>\". To get a token, refer to https://cloud.ibm.com/apidocs/cloud-pak-data#getauthorizationtoken or use the \"get_access_token()\" method in cpd_utils.py.")
         sys.exit(1)
     
     if SPACE_ID is None:
-        click.echo("Configure wml space id (the target space you want to stage model files and dependencies) by exporting it as an environment variable SPACE_ID. In terminal, you can do \"export SPACE_ID=<id>\"; in python, you can do \"os.environ['SPACE_ID']=<id>\".")
+        click.echo("\nConfigure wml space id (the target space you want to stage model files and dependencies) by exporting it as an environment variable SPACE_ID. In terminal, you can do \"export SPACE_ID=<id>\"; in python, you can do \"os.environ['SPACE_ID']=<id>\".")
         sys.exit(1)
     
     if DLIM_PATH is None:
@@ -517,9 +522,9 @@ if __name__ == '__main__':
                     os.environ['DLIM_PATH'] = path
                     break
         if DLIM_PATH is None:
-            click.echo('Cannot find executable dlim. Make sure the parent folder of dlim is included in $PATH and the file is executable. You can add the parent folder of dlim to $PATH by running "export PATH=$PATH:<my folder>", or move the dlim file to a folder already added to $PATH. To make dlim executable, consider command "chmod +x dlim".')
+            click.echo('\nCannot find executable dlim. Make sure the parent folder of dlim is included in $PATH and the file is executable. You can add the parent folder of dlim to $PATH by running "export PATH=$PATH:<my folder>", or move the dlim file to a folder already added to $PATH. To make dlim executable, consider command "chmod +x dlim".')
             sys.exit(1)
 
-    click.echo(f"Detected env var USER_ACCESS_TOKEN and SPACE_ID.\nYou are working with WML space {color(SPACE_ID)}.\nLocation of executable cli {color('dlim')}: {color(DLIM_PATH)}")
+    click.echo(f"\nDetected env var USER_ACCESS_TOKEN and SPACE_ID.\nYou are working with WML space {color(SPACE_ID)}.\nLocation of executable cli {color('dlim')}: {color(DLIM_PATH)}")
     click.echo('')
     cli()
