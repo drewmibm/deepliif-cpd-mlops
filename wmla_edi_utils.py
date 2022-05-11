@@ -15,33 +15,7 @@ import base64
 if os.environ.get('REDHARE_MODEL_NAME', False):
     from redhareapi import Kernel
 
-# Universe of valid images in response, excluding original IHC
-modality_images = ['Hema',
-                   'DAPI',
-                   'Lap2',
-                   'Marker',]
-seg_images = ['Seg',
-              'SegOverlaid',
-              'SegRefined',]
-all_images = modality_images + seg_images
 
-image_return_dict = {'all':all_images,
-                     'modalities':modality_images,
-                     'seg_masks':seg_images}
-
-def prepare_output_images(images_to_return, output_dir):
-    """Drop files not indicated by param images_to_return."""
-    
-    output_images_keepers = image_return_dict[images_to_return].copy()
-    drop_files = []
-    for f in os.listdir(output_dir):
-        tp = f.split('_')[-1].split('.')[0]
-        if tp not in output_images_keepers:
-            drop_files.append(f)
-    if len(drop_files) > 0:
-        for f in drop_files:
-            path = os.path.join(output_dir,f)
-            os.remove(path)
 
 def log(message:Union[str,List], path_source:str,
         save_log_to_volume:bool=True, access_token:str=None,
