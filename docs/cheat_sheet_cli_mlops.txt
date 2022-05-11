@@ -2,9 +2,9 @@ export SPACE_ID=81c825b4-a1ae-4c1e-8cf3-51b6e3b301b7
 export PATH=$PATH:/userfs
 
 ###### step by step ######
-python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-tutorial/deployment-wmla/edi_deployment_files/deepliif-wendy --path-yml=/userfs/deployment_metadata_cli_example.yml
+python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-deployment/edi-deployment-dirs/deepliif-base --path-yml=/userfs/deployment_metadata_cli_example.yml
 
-python cli_mlops.py deploy create --name deepliif-wendy-test --model-asset-id 54b19403-9c10-48e5-b3f3-dc958e2cfbb1 --kernel-filename kernel-wendy.py --custom-arg CPD_USERNAME=wangw6 --custom-arg CPD_API_KEY=********** --custom-arg VOLUME_DISPLAY_NAME=AdditionalDeepLIIFVolume
+python cli_mlops.py deploy create --name deepliif-wendy-test --model-asset-id 41a9a8ff-dcaa-4f0f-beb5-2e1bbaa2f384 --kernel-filename kernel.py --custom-arg CPD_USERNAME=wangw6 --custom-arg CPD_API_KEY=********** --custom-arg VOLUME_DISPLAY_NAME=AdditionalDeepLIIFVolume
 
 python cli_mlops.py monitor create --name deepliif-wendy-test
 
@@ -20,9 +20,9 @@ python cli_mlops.py config delete --name deepliif-wendy-test
 
 
 ###### simplified ######
-python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-tutorial/deployment-wmla/edi_deployment_files/deepliif-wendy --path-yml=/userfs/deployment_metadata_cli_example.yml -f
+python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/deepliif-ws-output/Test_Model_wendy_ws_serialized2 --path-dependency=/userfs/wmla-deployment/edi-deployment-dirs/deepliif-base --path-yml=/userfs/deployment_metadata_cli_example.yml -f
 
-python cli_mlops.py deploy create --name deepliif-wendy-test --model-asset-id d836bf39-ced2-4734-b988-d8c14b589f7f --kernel-filename kernel-wendy.py --custom-arg CPD_USERNAME=wangw6 --custom-arg CPD_API_KEY=********** --custom-arg VOLUME_DISPLAY_NAME=AdditionalDeepLIIFVolume
+python cli_mlops.py deploy create --name deepliif-wendy-test --model-asset-id c1c4af90-5227-4d8c-a75e-6b2b6dc96351 --kernel-filename kernel-wendy.py --custom-arg CPD_USERNAME=wangw6 --custom-arg CPD_API_KEY=********** --custom-arg VOLUME_DISPLAY_NAME=AdditionalDeepLIIFVolume
 
 python cli_mlops.py monitor create --name deepliif-wendy-test
 
