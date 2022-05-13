@@ -115,4 +115,3 @@ wmla_deployment:
       n_min_kernels: 1
       n_replicas: 1
       task_execution_timeout: 120
-    volume_display_name: AdditionalDeepLIIFVolume
