@@ -1,11 +1,15 @@
 import os
 import time
+import pandas as pd
 from ibm_cloud_sdk_core.authenticators import *
 from ibm_watson_openscale import APIClient
 from ibm_watson_openscale.base_classes.watson_open_scale_v2 import *
 from ibm_watson_openscale import *
 from ibm_watson_openscale.supporting_classes.enums import *
 from ibm_watson_openscale.supporting_classes import *
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DATA_MART_ID = '00000000-0000-0000-0000-000000000000'
 
@@ -38,6 +42,77 @@ def get_client(credentials=None):
             return APIClient(authenticator=CloudPakForDataAuthenticator(**credentials), 
                              service_url=credentials['url'])
 
+def service_provider_list(wos_client,return_json=False):
+    """
+    List service providers.
+    
+    return_json: if False, return a normalized pandas dataframe
+    """
+    service_providers = wos_client.service_providers.list().get_result().to_dict()['service_providers']
+    if return_json:
+        return service_providers
+    else:
+        return pd.json_normalize(service_providers)
+
+DICT_SERVICE_PROVIDER_TYPE = {'custom':ServiceTypes.CUSTOM_MACHINE_LEARNING,
+                              'wml':ServiceTypes.WATSON_MACHINE_LEARNING,
+                              'aws':ServiceTypes.AMAZON_SAGEMAKER,
+                              'azure':ServiceTypes.AZURE_MACHINE_LEARNING,
+                              'spss':ServiceTypes.SPSS_COLLABORATION_AND_DEPLOYMENT_SERVICES}
+
+def service_provider_create(wos_client,name,description='',operational_stage='production', credentials=None,
+                            service_provider_type='custom',headless=True,overwrite=False):
+    """
+    Create a service provider. Currently only supports a headless ml provider.
+    A list of service provider ids with matching name and type will be returned instead, if existing ones are found AND
+    overwrite = False.
+    
+    name: name of the new service provider
+    description: description of the new service provider
+    operational_stage: a string value, either "production" or "pre_production"
+    credentials: credentials used to connect to this new service provider; left as None for a headless custom provider
+    service_provider_type: currently only supports "custom"
+    headless: currently only supports True
+    overwrite: whether to overwrite if found any existing one with the same name
+    """
+    if service_provider_type not in DICT_SERVICE_PROVIDER_TYPE.keys():
+        raise Exception(f'service provider_type {service_provider_type} is not one of {list(DICT_SERVICE_PROVIDER_TYPE.keys())}')
+    
+    if service_provider_type != 'custom':
+        raise Exception('not implemented')
+    if not headless:
+        raise Exception('not implemented')
+    
+    if credentials is None:
+        if service_provider_type == 'custom' and headless:
+            credentials = WMLCredentialsCP4D()
+    
+    service_providers = wos_client.service_providers.list().get_result().to_dict()['service_providers']
+    service_provider_ids = [service_provider['metadata']['id'] for service_provider in service_providers if service_provider['entity']['name']==name and service_provider['entity']['service_type']==DICT_SERVICE_PROVIDER_TYPE[service_provider_type]]
+    print(f'{len(service_provider_ids)} existing service providers found with the same name {name} and type {service_provider_type}')
+    
+    if len(service_provider_ids) > 0:
+        if not overwrite:
+            if len(service_provider_ids) == 1:
+                return service_provider_ids[0]
+            else:
+                return service_provider_ids
+        else:
+            print('Overwrite is on, deleting the existing one(s)...')
+            for service_provider_id in service_provider_ids:
+                wos_client.service_providers.delete(service_provider_id)
+                print(f'Deleted service provider {service_provider_id}')
+    
+    added_service_provider_result = wos_client.service_providers.add(
+        name=name,
+        description=description,
+        service_type=DICT_SERVICE_PROVIDER_TYPE[service_provider_type],
+        operational_space_id = operational_stage,
+        credentials=credentials,
+        background_mode=False
+     ).result
+    
+    return added_service_provider_result.metadata.id
 
 def integrated_system_delete(integrated_system_name,wos_client):
     """
