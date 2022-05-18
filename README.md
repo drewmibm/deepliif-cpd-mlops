@@ -47,7 +47,7 @@ THRESHOLDS_SEGMENTATION = {'precision': {'threshold': [60.0, 'lower']},
  'PixAcc_negative': {'threshold': [0.35, 'lower']}}
 ```
 
-You can fill in the information you gathered in the User Configuration section, and then follow the notebook [A_MLOps_Pipeline](../A_MLOps_Pipeline.ipynb) to generate a deployment metadata yaml file. Alternative, you may refer to the example yaml [deployment_metadata_cli_example.yml](../deployment_metadata_cli_example.yml) and ask researchers / data scientists to provide you with a deployment metadata yaml of the same structure.
+You can fill in the information you gathered in the User Configuration section, and then follow the notebook [A_MLOps_Pipeline](A_MLOps_Pipeline.ipynb) to generate a deployment metadata yaml file. Alternative, you may refer to the example yaml [deployment_metadata_cli_example.yml](deployment_metadata_cli_example.yml) and ask researchers / data scientists to provide you with a deployment metadata yaml of the same structure.
 
 #### How to make my yaml based on the example?
 You can create a copy of the example and make modifications.
@@ -61,13 +61,13 @@ You can create a copy of the example and make modifications.
     
 
 ## 2. Procedures
-You can either use the cli tool [cli_mlops.py](../cli_mlops_py), or follow the notebook for more interactive experience [A_MLOps_Pipeline](../A_MLOps_Pipeline.ipynb). It's recommended to use the cli as it provides more functionalities.
+You can either use the cli tool [cli_mlops.py](cli_mlops_py), or follow the notebook for more interactive experience [A_MLOps_Pipeline](A_MLOps_Pipeline.ipynb). It's recommended to use the cli as it provides more functionalities.
 
 Note:  
 space: Watson Machine Learning deployment space
 
 ### 2.1 CLI
-The cli is more or less a wrapper of notebook [A_MLOps_Pipeline](../A_MLOps_Pipeline.ipynb) with more functionalities. 
+The cli is more or less a wrapper of notebook [A_MLOps_Pipeline](A_MLOps_Pipeline.ipynb) with more functionalities. 
 
 A list of example commands can be found in [cheat_sheet_cli_mlops.txt](cheat_sheet_cli_mlops.txt)
 
@@ -107,7 +107,7 @@ python cli_mlops.py prepare stage --path-model=/mnts/AdditionalDeepLIIFVolume/de
 
 
 #### 3. Deploy the model
-Similar to how this notebook works, the `deploy create` method at the backend executes pipeline notebook [A2](../A2_WMLA_Model_Deploy.ipynb).
+Similar to how this notebook works, the `deploy create` method at the backend executes pipeline notebook [A2](A2_WMLA_Model_Deploy.ipynb).
 ```
 python cli_mlops.py deploy create --name <deployment name> --model-asset-id <model asset id>
 ```
@@ -122,7 +122,7 @@ python cli_mlops.py deploy create --name my-model --model-asset-id 41a9a8ff-dcaa
 ```
 
 #### 4. Configure monitors for the model
-Similar to how this notebook works, the `monitor create` method at the backend executes pipeline notebook [A3_OpenScale_Configuration](../A3_OpenScale_Configuration.ipynb).
+Similar to how this notebook works, the `monitor create` method at the backend executes pipeline notebook [A3_OpenScale_Configuration](A3_OpenScale_Configuration.ipynb).
 ```
 python cli_mlops.py monitor create --name <deployment name> --service-provider-name <openscale deployment service provider name> --save-notebook <True to save the executed pipeline notebook out>
 ```
@@ -210,7 +210,7 @@ wos_client = wos_util.get_client()
 wos_client.service_providers.show()
 ```
 
-If you need to create a new headless deployment provider, follow notebook [C1_OpenScale_Dummy_ML_Provider.ipynb](../C1_OpenScale_Dummy_ML_Provider.ipynb)
+If you need to create a new headless deployment provider, follow notebook [C1_OpenScale_Dummy_ML_Provider.ipynb](C1_OpenScale_Dummy_ML_Provider.ipynb)
 
 ### 3.3 `THRESHOLDS_<>`: Metric Thresholds for OpenScale Monitor
 Get default monitor thresholds:
