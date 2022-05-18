@@ -90,7 +90,7 @@ Remember to deploy this modified script, not the original script.
 *Having the credentials as additional variables added using the utility function is useful when you need to version control the custom monitor script, say using github. You don't want to take the risk of leaking your credentials to github, but still want to keep track of the changes. Using this method, you can track the original custom monitor script, and locally test & deploy the modified one.*
 
 ### 2.2 Local Test
-You may refer to notebook [B1_OpenScale_Custom_Monitor_Dev_and_Test](../B1_OpenScale_Custom_Monitor_Dev_and_Test) that shows how to add dependent variables & scripts into a custom monitor deployale script, and then run local testing, or use the following examples.
+You may refer to notebook [B1_OpenScale_Custom_Monitor_Dev_and_Test](../B1_OpenScale_Custom_Monitor_Dev_and_Test.ipynb) that shows how to add dependent variables & scripts into a custom monitor deployale script, and then run local testing, or use the following examples.
 
 #### Test code outside of functions
 ```
