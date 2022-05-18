@@ -57,11 +57,11 @@ You can create a copy of the example and make modifications.
   1. deployment configuration, such as how much memory is needed, etc.
   2. monitor configuration, such as the threshold for each metric under each monitor
     - you need to delete the unwanted monitor from the example and add your preferred one(s) if they are not already there
-    - refer to [section 3.3](https://github.com/drewmibm/deepliif-cpd-mlops/blob/main/docs/Instructions_MLOps.md#33-thresholds_-metric-thresholds-for-openscale-monitor) to see how to get all metrics and their default thresholds
+    - refer to [section 3.3](https://github.com/drewmibm/deepliif-cpd-mlops#33-thresholds_-metric-thresholds-for-openscale-monitor) to see how to get all metrics and their default thresholds
     
 
 ## 2. Procedures
-You can either use the cli tool [cli_mlops.py](cli_mlops_py), or follow the notebook for more interactive experience [A_MLOps_Pipeline](A_MLOps_Pipeline.ipynb). It's recommended to use the cli as it provides more functionalities.
+You can either use the cli tool [cli_mlops.py](cli_mlops.py), or follow the notebook for more interactive experience [A_MLOps_Pipeline](A_MLOps_Pipeline.ipynb). It's recommended to use the cli as it provides more functionalities.
 
 Note:  
 space: Watson Machine Learning deployment space
@@ -69,7 +69,7 @@ space: Watson Machine Learning deployment space
 ### 2.1 CLI
 The cli is more or less a wrapper of notebook [A_MLOps_Pipeline](A_MLOps_Pipeline.ipynb) with more functionalities. 
 
-A list of example commands can be found in [cheat_sheet_cli_mlops.txt](cheat_sheet_cli_mlops.txt)
+A list of example commands can be found in [cheat_sheet_cli_mlops.txt](docs/cheat_sheet_cli_mlops.txt)
 
 #### 1. Prepare the environment
 Make sure you have CPD access token and WML space id as environment variable. Check using the following command:
