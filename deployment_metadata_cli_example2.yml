@@ -113,6 +113,5 @@
           enable_gpus: 'True'
           memory_allocation: 10000
           n_cpus: 8
-          n_min_kernels: 1
-          n_replicas: 1
+          kernel_min: 1
           task_execution_timeout: 120
