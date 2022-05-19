@@ -132,19 +132,24 @@ def get_deployment_view_item(deployment_name: str, search_str: str) -> str:
             if line.startswith(search_str):
                 return line.split(":")[1].strip() # Get value after colon and remove whitespace
 
-def wait_for_model_idle_status(deployment_name: str, retries: int = 60, delay: int = 5):
+def wait_for_model_idle_status(deployment_name: str, retries: int = 60, delay: int = 5, kernel_min = 1):
     """Wait for the deployed model to return a Started status
         Args:
             deployment_name: string identifier of deployment
             retries: number of API attempts to determine start status
             delay: number of seconds between API calls
+            kernel_min: kernel_min setting in WMLA deployment profile; skip this function if kernel_min=0
     """
-    for i in range(retries):
-
-        if get_deployment_view_item(deployment_name, 'Status') == 'IDLE':
-            return
-        if delay > 0 and i < (retries - 1):
-            sleep(delay)
+    if kernel_min > 0:
+        for i in range(retries):
+            if get_deployment_view_item(deployment_name, 'Status') == 'IDLE':
+                print('kernel is ready (idle status)')
+                return
+            if delay > 0 and i < (retries - 1):
+                sleep(delay)
+        print(f'no kernel is ready to process requests after {retries * delay} seconds; if this is unexpected, check the deployment logs from WMLA web console for more details')
+    else:
+        print('kernel_min=0, no need to check kernel status')
 
 
 def serialize_image(img: Image) -> str:
