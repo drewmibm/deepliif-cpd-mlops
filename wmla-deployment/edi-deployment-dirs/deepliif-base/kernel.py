@@ -204,10 +204,10 @@ class MatchKernel(Kernel):
                 return
             
             # -------- run inference --------
-            OUTPUT_DIR = f'edi_deployments/{deploy_name}/output_dir/{request_id}'
+            OUTPUT_DIR = f'edi_deployments/{deploy_name}/{request_id}/output_dir/'
             os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-            INPUT_DIR = f'edi_deployments/{deploy_name}/input_dir'
+            INPUT_DIR = f'edi_deployments/{deploy_name}/{request_id}/input_dir/'
             os.makedirs(INPUT_DIR, exist_ok=True)
 
             print(f"Getting input image")
