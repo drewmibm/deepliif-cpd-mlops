@@ -3,10 +3,10 @@ deployment_space_id: null
 model_asset: null
 model_name: null
 openscale_custom_metric_provider:
-    generic_metrics:
+    generic_metrics_v5:
       dir_gt: DeepLIIF_Datasets/model_eval/gt_images
       dir_pred: DeepLIIF_Datasets/model_eval/model_images
-      most_recent: 1
+      most_recent: 7
       thresholds:
         num_images_recent_ground_truth:
           threshold:
@@ -25,10 +25,10 @@ openscale_custom_metric_provider:
           - 40.0
           - lower
       volume_display_name: AdditionalDeepLIIFVolume
-    segmentation_metrics:
+    segmentation_metrics_v22:
       dir_gt: DeepLIIF_Datasets/model_eval/gt_images
       dir_pred: DeepLIIF_Datasets/model_eval/model_images
-      most_recent: 5
+      most_recent: 7
       thresholds:
         Dice:
           threshold:
