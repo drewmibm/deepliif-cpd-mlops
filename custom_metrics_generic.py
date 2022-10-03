@@ -43,66 +43,79 @@ def update_monitor_instance(base_url, access_token, custom_monitor_instance_id, 
     headers["Authorization"] = "Bearer {}".format(access_token)
     response = requests.patch(monitor_instance_url, headers=headers, json = patch_payload, verify=False)
     monitor_response = response.json()
-    return response.status_code, monitor_response
+    return response.status_code, response
 
 
 #Add your code to compute the custom metrics. 
 def get_metrics(subscription_id):
-    #Add the logic here to compute the metrics. Use the below metric names while creating the custom monitor definition
-    fn_meta = 'deployment_metadata.yml'
-    metadata_all = wml_util.metadata_yml_load(wml_client,fn_meta=fn_meta)
-    metadata = [metadata for model_asset_id,metadata in metadata_all.items() if metadata['openscale_subscription_id']==subscription_id]
-    if len(metadata) == 0:
-        return 0, {'error_msg':f'FAILED: Cannot find deployment associated with subscription id {subscription_id} in deployment metadata file {fn_meta}.'}
-    elif len(metadata) > 1:
-        return 0, {'error_msg':f'FAILED: Multiple model deployments are found with the same subscription id {subscription_id} in deployment metadata file {fn_meta}. It should be unique.'}
-    
-    metadata = metadata[0]
-    env_name = os.getenv('HOSTNAME','')
-    
-    flag_local_test = 'jupyter-lab' in env_name
-    dir_user = '/userfs' if flag_local_test else '/home/wmlfuser'
-    print(dir_user)
+    log_msg_get_metrics = []
+    try:
+        #Add the logic here to compute the metrics. Use the below metric names while creating the custom monitor definition
+        fn_meta = 'deployment_metadata.yml'
+        metadata_all = wml_util.metadata_yml_load(wml_client,fn_meta=fn_meta)
+        metadata = [metadata for model_asset_id,metadata in metadata_all.items() if metadata['openscale_subscription_id']==subscription_id]
+        if len(metadata) == 0:
+            return 1, {'error_msg':f'FAILED: Cannot find deployment associated with subscription id {subscription_id} in deployment metadata file {fn_meta}.'}
+        elif len(metadata) > 1:
+            return 1, {'error_msg':f'FAILED: Multiple model deployments are found with the same subscription id {subscription_id} in deployment metadata file {fn_meta}. It should be unique.'}
+        
+        log_msg_get_metrics.append('downloaded deployment metadata and checked entries')
+        
+        metadata = metadata[0]
+        env_name = os.getenv('HOSTNAME','')
 
-    path_script = 'DeepLIIF_Statistics/ComputeStatistics.py'
+        flag_local_test = 'jupyter-lab' in env_name
+        dir_user = '/userfs' if flag_local_test else '/home/wmlfuser'
+        print(dir_user)
+        log_msg_get_metrics.append(dir_user)
 
-    dir_gt = 'DeepLIIF_Datasets/model_eval/gt_images' if flag_local_test else metadata['openscale_custom_metric_provider']['generic_metrics']['dir_gt']
-    dir_pred = 'DeepLIIF_Datasets/model_eval/model_images' if flag_local_test else metadata['openscale_custom_metric_provider']['generic_metrics']['dir_pred']
-    most_recent = 5 if flag_local_test else metadata['openscale_custom_metric_provider']['generic_metrics']['most_recent']
-    
-    os.environ['VOLUME_DISPLAY_NAME'] = 'AdditionalDeepLIIFVolume' if flag_local_test else metadata['openscale_custom_metric_provider']['generic_metrics']['volume_display_name']
-    
-    # inspect images
-    files_gt_total = sv.list_files(dir_gt)
-    files_pred_total = sv.list_files(dir_pred)
-    
-    files_gt_recent = sv.list_files(dir_gt,most_recent=most_recent)
-    files_pred_recent = sv.list_files(dir_pred,most_recent=most_recent)
-    
-    scores = {'num_images_total_ground_truth':len(files_gt_total),
-              'num_images_total_predicted':len(files_pred_total),
-              'num_images_recent_ground_truth':len(files_gt_recent),
-              'num_images_recent_predicted':len(files_pred_recent)}
+        path_script = 'DeepLIIF_Statistics/ComputeStatistics.py'
+        monitor_id = 'generic_metrics_v5' # we have to specify the name of the monitor id because in 4.5.3 every time you try a new iteration of a custom monitor script, it has to be registered with a new & unique name that has not been used in the past, otherwise error happens when creating a monitor instance; previously we always re-used the monitor name/id so didn't have to change it frequently
+        dir_gt = 'DeepLIIF_Datasets/model_eval/gt_images' if flag_local_test else metadata['openscale_custom_metric_provider'][monitor_id]['dir_gt']
+        dir_pred = 'DeepLIIF_Datasets/model_eval/model_images' if flag_local_test else metadata['openscale_custom_metric_provider'][monitor_id]['dir_pred']
+        most_recent = 5 if flag_local_test else metadata['openscale_custom_metric_provider'][monitor_id]['most_recent']
 
-    return scores
+        os.environ['VOLUME_DISPLAY_NAME'] = 'AdditionalDeepLIIFVolume' if flag_local_test else metadata['openscale_custom_metric_provider'][monitor_id]['volume_display_name']
+        
+        log_msg_get_metrics.append([path_script,dir_gt,dir_pred,most_recent,os.environ['VOLUME_DISPLAY_NAME']])
+        
+        # inspect images
+        files_gt_total = sv.list_files(dir_gt)
+        files_pred_total = sv.list_files(dir_pred)
+
+        files_gt_recent = sv.list_files(dir_gt,most_recent=most_recent)
+        files_pred_recent = sv.list_files(dir_pred,most_recent=most_recent)
+
+        scores = {'num_images_total_ground_truth':len(files_gt_total),
+                  'num_images_total_predicted':len(files_pred_total),
+                  'num_images_recent_ground_truth':len(files_gt_recent),
+                  'num_images_recent_predicted':len(files_pred_recent)}
+
+        return 0, scores
+    except Exception as ex:
+        log_msg_get_metrics.append(str(ex))
+        return 1, log_msg_get_metrics
 
 # Publishes the Custom Metrics to OpenScale
 def publish_metrics(base_url, access_token, data_mart_id, subscription_id, custom_monitor_id, custom_monitor_instance_id, custom_monitoring_run_id, timestamp):
     # Generate an monitoring run id, where the publishing happens against this run id
-    custom_metrics = get_metrics(subscription_id)
-    measurements_payload = [
-              {
-                "timestamp": timestamp,
-                "run_id": custom_monitoring_run_id,
-                "metrics": [custom_metrics]
-              }
-            ]
-    headers["Authorization"] = "Bearer {}".format(access_token)
-    measurements_url = base_url + '/v2/monitor_instances/' + custom_monitor_instance_id + '/measurements'
-    response = requests.post(measurements_url, headers=headers, json = measurements_payload, verify=False)
-    published_measurement = response.json()
+    status_code, custom_metrics = get_metrics(subscription_id)
+    if status_code == 0:
+        measurements_payload = [
+                  {
+                    "timestamp": timestamp,
+                    "run_id": custom_monitoring_run_id,
+                    "metrics": [custom_metrics]
+                  }
+                ]
+        headers["Authorization"] = "Bearer {}".format(access_token)
+        measurements_url = base_url + '/v2/monitor_instances/' + custom_monitor_instance_id + '/measurements'
+        response = requests.post(measurements_url, headers=headers, json = measurements_payload, verify=False)
+        published_measurement = response.json()
 
-    return response.status_code, published_measurement
+        return response.status_code, published_measurement, measurements_payload
+    else:
+        return 1, custom_metrics, None
 
 
 def score( input_data ):
@@ -121,27 +134,36 @@ def score( input_data ):
     os.environ['USER_ACCESS_TOKEN'] = access_token
 
     published_measurements = []
+    log_msg = []
     error_msg = []
 
     custom_monitoring_run_id = custom_monitor_instance_params["run_details"]["run_id"]
     try:
-        status_code, published_measurement = publish_metrics(base_url, access_token, data_mart_id, subscription_id, custom_monitor_id, custom_monitor_instance_id, custom_monitoring_run_id, timestamp)
+        status_code, published_measurement, payload = publish_metrics(base_url, access_token, data_mart_id, subscription_id, custom_monitor_id, custom_monitor_instance_id, custom_monitoring_run_id, timestamp)
+        log_msg.append({'step':'publish_metrics',
+                          'status_code':status_code,
+                          'measurements_payload':payload,
+                          'response':published_measurement})
         if int(status_code) in [200, 201, 202]:
             custom_monitor_instance_params["run_details"]["run_status"] = "finished"
             published_measurements.append(published_measurement)
         else:
             custom_monitor_instance_params["run_details"]["run_status"] = "error"
             custom_monitor_instance_params["run_details"]["run_error_msg"] = published_measurement
-            error_msg.append(published_measurement)
+            error_msg.append('failed at publish_metrics')
 
         custom_monitor_instance_params["last_run_time"] = timestamp
         status_code, response = update_monitor_instance(base_url, access_token, custom_monitor_instance_id, custom_monitor_instance_params)
+        log_msg.append({'step':'update_monitor_instance',
+                              'status_code':status_code,
+                              'measurements_payload':custom_monitor_instance_params,
+                              'response':response.text})
         if not int(status_code) in [200, 201, 202]:
-            error_msg.append(response)
+            error_msg.append('failed at update_monitor_instance')
 
     except Exception as ex:
         error_msg.append(str(ex))
-    if error_msg is None:
+    if len(error_msg) == 0:
         response_payload = {
             "predictions" : [{ 
                 "values" : published_measurements
@@ -151,7 +173,8 @@ def score( input_data ):
     else:
         response_payload = {
             "predictions": [],
-            "error_msg": error_msg
+            "error_msg": error_msg,
+            "log_msg": log_msg
         }
 
     return response_payload
